@@ -126,13 +126,13 @@
   <div class="stat"><span>คะแนน</span><b id="score">0</b></div>
   <div class="stat"><span>สูงสุด</span><b id="high">0</b></div>
   <div class="stat lives"><span>ชีวิต</span><b id="lives">3</b></div>
-  <div class="stat"><span>เวลา</span><b id="time">30</b></div>
+  <div class="stat"><span>เวลา</span><b id="time">45</b></div>
 </div>
 
 <div class="game" id="game">
   <div class="overlay" id="introOverlay">
     <h2>🐭 Pest Control</h2>
-    <p>แตะทำลาย 🐀🪳🕷️🪰🐜 ที่บุกเข้ามาในโรงงาน<br>ห้ามแตะโดนของดี 🧻 ไม่งั้นเสียชีวิต<br>เวลา 30 วินาที ยิ่งทำลายได้มากยิ่งได้คะแนนสูง</p>
+    <p>แตะทำลาย 🐀🪳🕷️🪰🐜 ที่บุกเข้ามาในโรงงาน<br>ห้ามแตะโดนของดี 🧻 ไม่งั้นเสียชีวิต<br>เวลา 45 วินาที ยิ่งทำลายได้มากยิ่งได้คะแนนสูง</p>
     <button onclick="showForm()">เข้าใจแล้ว ต่อไป</button>
   </div>
   <div class="overlay hide" id="formOverlay">
@@ -172,7 +172,7 @@
 const badIcons = ["🐀","🪳","🕷️","🪰","🐜"];
 const goodIcons = ["🧻"];
 
-let score = 0, high = 0, lives = 3, timeLeft = 30;
+let score = 0, high = 0, lives = 3, timeLeft = 45;
 let spawnTimer = null, moveTimer = null, countdownTimer = null, running = false;
 let spawnInterval = 750;
 let targets = [];
@@ -207,7 +207,7 @@ function spawnTarget(){
   const id = idCounter++;
   const fromLeft = Math.random() < 0.5;
   const y = rand(10, game.clientHeight - 50);
-  const speed = rand(1.0, 1.5) + (30 - timeLeft) * 0.07;
+  const speed = rand(1.0, 1.5) + (45 - timeLeft) * 0.047;
 
   const el = document.createElement('div');
   el.className = 'target';
@@ -287,7 +287,7 @@ function startGame(){
   document.querySelectorAll('.target, .hit, .boom').forEach(e => e.remove());
   targets = [];
 
-  score = 0; lives = 3; timeLeft = 30; spawnInterval = 1000;
+  score = 0; lives = 3; timeLeft = 45; spawnInterval = 1000;
   document.getElementById('score').textContent = 0;
   document.getElementById('lives').textContent = 3;
   document.getElementById('time').textContent = timeLeft;
