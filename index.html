@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ล่าสัตว์รบกวน Pest Control</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #1b2b26;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 12px 30px;
+    min-height: 100vh;
+    color: #eef4f1;
+  }
+  h1 { font-size: 1.2rem; margin: 0 0 2px; text-align: center; }
+  .sub { color: #a9beb5; font-size: 0.78rem; margin-bottom: 10px; text-align: center; }
+
+  .stats { display: flex; gap: 10px; margin-bottom: 10px; font-size: 0.82rem; }
+  .stat { background: #24382f; border-radius: 10px; padding: 6px 12px; text-align: center; }
+  .stat b { display: block; font-size: 1.05rem; color: #6fe0a8; }
+  .stat.lives b { color: #ff6b6b; }
+
+  .game {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    height: 480px;
+    background: radial-gradient(circle at 50% 30%, #2c443a, #1b2b26);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 2px #3a5548;
+    cursor: crosshair;
+  }
+  .target {
+    position: absolute;
+    font-size: 34px;
+    user-select: none;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));
+  }
+  .hit {
+    position: absolute;
+    font-size: 0.85rem;
+    font-weight: 700;
+    pointer-events: none;
+    animation: floatUp 0.5s forwards;
+  }
+  .hit.good { color: #6fe0a8; }
+  .hit.bad { color: #ff6b6b; }
+  @keyframes floatUp { from { transform: translateY(0); opacity:1;} to { transform: translateY(-26px); opacity:0;} }
+
+  .boom {
+    position: absolute;
+    font-size: 30px;
+    animation: boom 0.3s forwards;
+    pointer-events: none;
+  }
+  @keyframes boom { 0%{transform:scale(0.6);opacity:1;} 100%{transform:scale(1.8);opacity:0;} }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,20,16,0.94);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 6px;
+    padding: 20px;
+  }
+  .overlay.hide { display: none; }
+  .overlay h2 { color: #6fe0a8; margin: 0; }
+  .overlay p { font-size: 0.85rem; color: #cfe0d8; margin: 4px 0; line-height: 1.5; }
+
+  input, select {
+    width: 100%;
+    max-width: 240px;
+    padding: 9px 10px;
+    margin-top: 8px;
+    border-radius: 8px;
+    border: none;
+    font-size: 0.9rem;
+  }
+
+  button {
+    margin-top: 12px;
+    background: #2f9e6f; color: #fff; border: none;
+    padding: 11px 26px; border-radius: 10px; font-size: 1rem; cursor: pointer;
+    font-weight: 700;
+  }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .dept-label { font-size: 0.8rem; color: #cfe0d8; margin-top: 10px; }
+  .dept-btns { display: flex; gap: 10px; margin-top: 6px; }
+  .dept-btn {
+    margin-top: 0;
+    flex: 1;
+    background: #24382f;
+    color: #cfe0d8;
+    padding: 10px 0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    border: 2px solid transparent;
+  }
+  .dept-btn.selected {
+    background: #2f9e6f;
+    color: #fff;
+    border-color: #6fe0a8;
+  }
+  .mascot { margin-top: 10px; font-size: 0.76rem; color: #a9beb5; text-align: center; max-width: 380px; }
+  .errmsg { color: #ff8080; font-size: 0.78rem; min-height: 16px; }
+</style>
+</head>
+<body>
+
+<h1>🐭 ล่าสัตว์รบกวน Pest Control</h1>
+<div class="sub">แตะทำลายสัตว์และแมลงรบกวน หลบของดี 🧻</div>
+
+<div class="stats">
+  <div class="stat"><span>คะแนน</span><b id="score">0</b></div>
+  <div class="stat"><span>สูงสุด</span><b id="high">0</b></div>
+  <div class="stat lives"><span>ชีวิต</span><b id="lives">3</b></div>
+  <div class="stat"><span>เวลา</span><b id="time">30</b></div>
+</div>
+
+<div class="game" id="game">
+  <div class="overlay" id="introOverlay">
+    <h2>🐭 Pest Control</h2>
+    <p>แตะทำลาย 🐀🪳🕷️🪰🐜 ที่บุกเข้ามาในโรงงาน<br>ห้ามแตะโดนของดี 🧻 ไม่งั้นเสียชีวิต<br>เวลา 30 วินาที ยิ่งทำลายได้มากยิ่งได้คะแนนสูง</p>
+    <button onclick="showForm()">เข้าใจแล้ว ต่อไป</button>
+  </div>
+  <div class="overlay hide" id="formOverlay">
+    <h2>กรอกข้อมูลก่อนเล่น</h2>
+    <input type="text" id="playerName" placeholder="ชื่อผู้เล่น" />
+    <input type="text" id="playerDept" placeholder="แผนก" />
+    <div class="dept-label">เลือก Mill</div>
+    <div class="dept-btns">
+      <button type="button" class="dept-btn" data-mill="SM" onclick="selectMill('SM', this)">SM</button>
+      <button type="button" class="dept-btn" data-mill="NM" onclick="selectMill('NM', this)">NM</button>
+    </div>
+    <div class="errmsg" id="formErr"></div>
+    <button onclick="startGame()">เริ่มเกม</button>
+  </div>
+  <div class="overlay hide" id="endOverlay">
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <p id="submitStatus" style="font-size:0.75rem;color:#8fb3a3;"></p>
+    <button onclick="showForm()">เล่นอีกครั้ง</button>
+  </div>
+</div>
+<div class="mascot">น้องอาบี้: สัตว์รบกวนคือแหล่งปนเปื้อนอันดับต้นๆ ล่าให้หมดก่อนเข้าใกล้สายผลิต!</div>
+
+<!-- hidden iframe target for silent score submission -->
+<iframe name="scoreFrame" style="display:none;"></iframe>
+<form id="scoreForm" method="POST"
+      action="https://script.google.com/macros/s/AKfycbw0a87AeR9iU6I0MiiaUE9pj1IQtkfkgh0-zoZCdsBVnb_aRAqlXH_oEsKibPyD0T6r/exec"
+      target="scoreFrame" style="display:none;">
+  <input type="text" name="game" id="f_game" value="Pest Control">
+  <input type="text" name="name" id="f_name">
+  <input type="text" name="dept" id="f_dept">
+  <input type="text" name="mill" id="f_mill">
+  <input type="text" name="score" id="f_score">
+</form>
+
+<script>
+const badIcons = ["🐀","🪳","🕷️","🪰","🐜"];
+const goodIcons = ["🧻"];
+
+let score = 0, high = 0, lives = 3, timeLeft = 30;
+let spawnTimer = null, moveTimer = null, countdownTimer = null, running = false;
+let spawnInterval = 750;
+let targets = [];
+let idCounter = 0;
+let playerName = '', playerDept = '', playerMill = '';
+
+const game = document.getElementById('game');
+
+function rand(min, max){ return Math.random() * (max - min) + min; }
+
+function selectMill(mill, el){
+  playerMill = mill;
+  document.querySelectorAll('.dept-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('formErr').textContent = '';
+}
+
+function showForm(){
+  playerMill = '';
+  document.querySelectorAll('.dept-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('introOverlay').classList.add('hide');
+  document.getElementById('endOverlay').classList.add('hide');
+  document.getElementById('formOverlay').classList.remove('hide');
+}
+
+function spawnTarget(){
+  const isBad = Math.random() < 0.68;
+  const emoji = isBad
+    ? badIcons[Math.floor(Math.random()*badIcons.length)]
+    : goodIcons[Math.floor(Math.random()*goodIcons.length)];
+
+  const id = idCounter++;
+  const fromLeft = Math.random() < 0.5;
+  const y = rand(10, game.clientHeight - 50);
+  const speed = rand(1.0, 1.5) + (30 - timeLeft) * 0.07;
+
+  const el = document.createElement('div');
+  el.className = 'target';
+  el.textContent = emoji;
+  el.style.top = y + 'px';
+  el.style.left = (fromLeft ? -40 : game.clientWidth) + 'px';
+  game.appendChild(el);
+
+  const t = { id, el, isBad, x: fromLeft ? -40 : game.clientWidth, dir: fromLeft ? 1 : -1, speed, alive: true };
+  targets.push(t);
+
+  el.onclick = (e) => {
+    e.stopPropagation();
+    if (!running || !t.alive) return;
+    t.alive = false;
+    hit(t, isBad);
+  };
+}
+
+function hit(t, isBad){
+  const boom = document.createElement('div');
+  boom.className = 'boom';
+  boom.textContent = '💥';
+  boom.style.left = t.x + 'px';
+  boom.style.top = t.el.style.top;
+  game.appendChild(boom);
+  setTimeout(() => boom.remove(), 300);
+
+  const label = document.createElement('div');
+  label.className = 'hit ' + (isBad ? 'good' : 'bad');
+  label.style.left = t.x + 'px';
+  label.style.top = t.el.style.top;
+
+  if (isBad){
+    score += 10;
+    label.textContent = '+10';
+  } else {
+    score = Math.max(0, score - 10);
+    lives--;
+    label.textContent = '-1 ชีวิต';
+    document.getElementById('lives').textContent = lives;
+  }
+  game.appendChild(label);
+  setTimeout(() => label.remove(), 500);
+
+  document.getElementById('score').textContent = score;
+  t.el.remove();
+
+  if (lives <= 0) endGame(false);
+}
+
+function moveLoop(){
+  targets.forEach(t => {
+    if (!t.alive) return;
+    t.x += t.dir * t.speed;
+    t.el.style.left = t.x + 'px';
+    if (t.x < -60 || t.x > game.clientWidth + 20){
+      t.alive = false;
+      t.el.remove();
+    }
+  });
+  targets = targets.filter(t => t.alive);
+}
+
+function startGame(){
+  const nameVal = document.getElementById('playerName').value.trim();
+  const deptVal = document.getElementById('playerDept').value.trim();
+  if (!nameVal || !deptVal || !playerMill){
+    document.getElementById('formErr').textContent = 'กรุณากรอกชื่อ แผนก และเลือก Mill ให้ครบ';
+    return;
+  }
+  playerName = nameVal;
+  playerDept = deptVal;
+
+  document.getElementById('formOverlay').classList.add('hide');
+  document.getElementById('endOverlay').classList.add('hide');
+  document.querySelectorAll('.target, .hit, .boom').forEach(e => e.remove());
+  targets = [];
+
+  score = 0; lives = 3; timeLeft = 30; spawnInterval = 1000;
+  document.getElementById('score').textContent = 0;
+  document.getElementById('lives').textContent = 3;
+  document.getElementById('time').textContent = timeLeft;
+
+  running = true;
+  scheduleSpawn();
+  moveTimer = setInterval(moveLoop, 30);
+  countdownTimer = setInterval(() => {
+    timeLeft--;
+    document.getElementById('time').textContent = timeLeft;
+    if (timeLeft <= 0) endGame(true);
+  }, 1000);
+}
+
+function scheduleSpawn(){
+  clearTimeout(spawnTimer);
+  spawnTarget();
+  if (spawnInterval > 280) spawnInterval -= 14;
+  spawnTimer = setTimeout(scheduleSpawn, spawnInterval);
+}
+
+function submitScore(){
+  document.getElementById('f_name').value = playerName;
+  document.getElementById('f_dept').value = playerDept;
+  document.getElementById('f_mill').value = playerMill;
+  document.getElementById('f_score').value = score;
+  try {
+    document.getElementById('scoreForm').submit();
+    document.getElementById('submitStatus').textContent = 'บันทึกคะแนนเรียบร้อย';
+  } catch (e) {
+    document.getElementById('submitStatus').textContent = '';
+  }
+}
+
+function endGame(timeUp){
+  running = false;
+  clearInterval(countdownTimer);
+  clearInterval(moveTimer);
+  clearTimeout(spawnTimer);
+  document.querySelectorAll('.target, .hit, .boom').forEach(e => e.remove());
+  targets = [];
+  if (score > high){
+    high = score;
+    document.getElementById('high').textContent = high;
+  }
+  document.getElementById('endTitle').textContent = timeUp ? '⏰ หมดเวลา!' : '💥 หมดชีวิต!';
+  document.getElementById('endText').textContent = `${playerName} (${playerDept} / ${playerMill}) — คะแนน ${score} แต้ม`;
+  document.getElementById('endOverlay').classList.remove('hide');
+  submitScore();
+}
+</script>
+
+</body>
+</html>
